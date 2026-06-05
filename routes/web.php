@@ -22,6 +22,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('snmp-profiles', SnmpProfileController::class)->except(['show']);
         Route::resource('devices', DeviceController::class)->except(['show']);
         Route::post('devices/{device}/snmp-test', [DeviceController::class, 'snmpTest'])->name('devices.snmp-test');
+        Route::post('devices/{device}/poll', [DeviceController::class, 'poll'])->name('devices.poll');
         Route::resource('users', UserController::class)->except(['show']);
     });
 

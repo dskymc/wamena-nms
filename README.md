@@ -62,6 +62,71 @@ Login default: `admin@nms.local` / `password` (ubah di production).
 - Uji koneksi SNMP (GET sysDescr.0) per perangkat
 - Dashboard ringkasan inventori
 
+## Fitur Fase 2a — Polling & Status Up/Down
+
+- Polling SNMP otomatis untuk perangkat **MikroTik** yang dimonitor (`is_monitored = true`)
+- Status perangkat: **Up**, **Down**, atau **Unknown**
+- Dashboard kartu Up/Down/Unknown + daftar perangkat down
+- Filter status di daftar perangkat + kolom **Terakhir Terlihat**
+- Tombol **Poll Sekarang** di halaman edit perangkat
+- Perintah Artisan `nms:poll-devices` (sync, tanpa queue worker wajib)
+
+### Kriteria polling
+
+Perangkat di-poll jika:
+
+- `is_monitored = true`
+- Memiliki profil SNMP
+- Vendor **MikroTik** (vendor lain tetap `unknown` sampai fase berikutnya)
+- Sudah lewat `poll_interval_sec` sejak `last_seen_at`, atau belum pernah di-poll
+
+OID yang di-GET: `sysUpTime`, `sysName`, dan identity MikroTik (konfigurasi di `config/nms.php`).
+
+### Setup Task Scheduler (Windows / XAMPP)
+
+Polling berjalan lewat Laravel Scheduler. Buat task di **Task Scheduler** yang menjalankan setiap **1 menit**:
+
+**Program/script:**
+
+```
+C:\xampp\php\php.exe
+```
+
+**Add arguments:**
+
+```
+C:\xampp\htdocs\nms\artisan schedule:run
+```
+
+**Start in:**
+
+```
+C:\xampp\htdocs\nms
+```
+
+Centang **Run whether user is logged on or not** jika server headless.
+
+Uji manual tanpa scheduler:
+
+```bash
+php artisan nms:poll-devices
+php artisan schedule:list
+```
+
+Opsi `--limit=10` membatasi jumlah perangkat per eksekusi (default: 50, lihat `config/nms.php`).
+
+### Polling sync vs queue
+
+Fase 2a menggunakan polling **sync** (`dispatchSync`) sehingga tidak perlu menjalankan `queue:work` di XAMPP. Class `PollDeviceJob` sudah disiapkan untuk upgrade async di Fase 2b.
+
+Jika nanti ingin async, jalankan worker terpisah:
+
+```bash
+php artisan queue:work --stop-when-empty
+```
+
+Pastikan `QUEUE_CONNECTION=database` di `.env` (migrasi tabel `jobs` sudah tersedia).
+
 ### Role
 
 | Role | Hak akses |
@@ -80,7 +145,14 @@ Login default: `admin@nms.local` / `password` (ubah di production).
 /snmp community add name=public addresses=0.0.0.0/0
 ```
 
-Untuk SNMPv3, gunakan menu SNMP di Winbox atau perintah `/snmp community` sesuai dokumentasi RouterOS.
+Ganti `public` dan `addresses` sesuai community string profil SNMP di NMS — **batasi IP server NMS** di production, jangan gunakan `0.0.0.0/0`.
+
+Untuk polling Fase 2a, pastikan perangkat MikroTik:
+
+- SNMP enabled
+- Community/credential v3 cocok dengan profil di NMS
+- Firewall RouterOS mengizinkan UDP/161 dari IP server NMS
+- Perangkat di NMS: vendor **MikroTik**, **Monitoring aktif**, interval poll sesuai kebutuhan (default 300 detik)
 
 ### Ruijie
 
@@ -110,13 +182,13 @@ Library: [freedsx/snmp](https://github.com/FreeDSx/snmp) (pure PHP, tanpa eksten
 
 | Fase | Fitur |
 |------|--------|
-| 2a | Scheduler polling berkala (`PollDeviceJob`) |
+| 2a | ✅ Polling SNMP berkala, status Up/Down (MikroTik) |
 | 2b | Metrik historis & grafik (traffic, CPU, RAM) |
 | 2c | Alerting (threshold, email/Telegram) |
 | 2d | Topology (LLDP/CDP walk) |
 | 2e | SNMP trap receiver |
 
-Skema database saat ini sudah menyiapkan kolom `is_monitored`, `poll_interval_sec`, `last_seen_at`, dan `status` untuk fase polling.
+Skema database menyiapkan kolom `is_monitored`, `poll_interval_sec`, `last_seen_at`, `last_poll_error`, dan `status` untuk polling.
 
 ## Struktur Penting
 
@@ -126,14 +198,16 @@ app/
 ├── Http/Controllers/Admin/
 ├── Models/             # Device, Location, SnmpProfile
 ├── Policies/
-└── Services/Snmp/      # SnmpClient, SnmpTestResult
-config/nms.php          # Vendor OID & protokol SNMP
+└── Services/Snmp/      # SnmpClient, PollResult, DevicePollService
+config/nms.php          # Vendor OID, poll_oids & protokol SNMP
 ```
 
 ## Perintah Berguna
 
 ```bash
 php artisan migrate:fresh --seed
+php artisan nms:poll-devices
+php artisan schedule:list
 php artisan serve
 npm run dev
 ```

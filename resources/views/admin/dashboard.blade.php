@@ -18,13 +18,43 @@
                 <p class="text-sm text-gray-500">Total Lokasi</p>
                 <p class="mt-2 text-3xl font-bold text-gray-900">{{ $totalLocations }}</p>
             </div>
+        </div>
+
+        <div class="nms-stat-grid">
             <div class="nms-card">
-                <p class="text-sm text-gray-500">Status Unknown</p>
+                <p class="text-sm text-gray-500">Up</p>
+                <p class="mt-2 text-3xl font-bold text-green-600">{{ $upStatus }}</p>
+            </div>
+            <div class="nms-card">
+                <p class="text-sm text-gray-500">Down</p>
+                <p class="mt-2 text-3xl font-bold text-red-600">{{ $downStatus }}</p>
+            </div>
+            <div class="nms-card">
+                <p class="text-sm text-gray-500">Unknown</p>
                 <p class="mt-2 text-3xl font-bold text-gray-500">{{ $unknownStatus }}</p>
             </div>
         </div>
 
         <div class="nms-panel-grid">
+            <div class="nms-card">
+                <h3 class="mb-4 text-base font-semibold text-gray-800">Perangkat Down</h3>
+                @forelse ($downDevices as $device)
+                    <div class="flex items-center justify-between border-b border-gray-100 py-2.5 last:border-0">
+                        <div>
+                            <a href="{{ route('admin.devices.edit', $device) }}" class="text-sm font-medium text-gray-800 hover:text-indigo-600">
+                                {{ $device->name }}
+                            </a>
+                            <p class="font-mono text-xs text-gray-500">{{ $device->management_ip }}</p>
+                        </div>
+                        <span class="text-xs text-gray-500">
+                            {{ $device->last_seen_at ? $device->last_seen_at->format('d/m/Y H:i') : 'Belum pernah' }}
+                        </span>
+                    </div>
+                @empty
+                    <p class="py-6 text-center text-sm text-gray-500">Tidak ada perangkat down.</p>
+                @endforelse
+            </div>
+
             <div class="nms-card">
                 <h3 class="mb-4 text-base font-semibold text-gray-800">Perangkat per Vendor</h3>
                 @forelse ($devicesByVendor as $vendor => $total)
@@ -36,18 +66,18 @@
                     <p class="py-6 text-center text-sm text-gray-500">Belum ada perangkat terdaftar.</p>
                 @endforelse
             </div>
+        </div>
 
-            <div class="nms-card">
-                <h3 class="mb-4 text-base font-semibold text-gray-800">Perangkat per Lokasi</h3>
-                @forelse ($devicesByLocation as $location)
-                    <div class="flex items-center justify-between border-b border-gray-100 py-2.5 last:border-0">
-                        <span class="text-sm text-gray-700">{{ $location->name }}</span>
-                        <span class="rounded-full bg-indigo-50 px-2.5 py-0.5 text-sm font-semibold text-indigo-700">{{ $location->devices_count }}</span>
-                    </div>
-                @empty
-                    <p class="py-6 text-center text-sm text-gray-500">Belum ada perangkat di lokasi.</p>
-                @endforelse
-            </div>
+        <div class="nms-card">
+            <h3 class="mb-4 text-base font-semibold text-gray-800">Perangkat per Lokasi</h3>
+            @forelse ($devicesByLocation as $location)
+                <div class="flex items-center justify-between border-b border-gray-100 py-2.5 last:border-0">
+                    <span class="text-sm text-gray-700">{{ $location->name }}</span>
+                    <span class="rounded-full bg-indigo-50 px-2.5 py-0.5 text-sm font-semibold text-indigo-700">{{ $location->devices_count }}</span>
+                </div>
+            @empty
+                <p class="py-6 text-center text-sm text-gray-500">Belum ada perangkat di lokasi.</p>
+            @endforelse
         </div>
     </div>
 </x-app-layout>

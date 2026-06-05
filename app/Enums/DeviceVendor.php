@@ -13,4 +13,21 @@ enum DeviceVendor: string
     {
         return config("nms.vendors.{$this->value}.label", ucfirst($this->value));
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function pollOids(): array
+    {
+        $oids = config('nms.poll_oids.common', []);
+
+        $vendorOids = config("nms.poll_oids.{$this->value}", []);
+
+        return array_merge($oids, $vendorOids);
+    }
+
+    public function supportsPolling(): bool
+    {
+        return $this === self::Mikrotik;
+    }
 }

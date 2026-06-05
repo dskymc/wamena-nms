@@ -15,12 +15,18 @@
             @include('admin.partials.alerts')
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form method="GET" class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-2">
+                <form method="GET" class="mb-4 grid grid-cols-1 md:grid-cols-5 gap-2">
                     <x-text-input name="search" type="text" placeholder="Cari nama, IP, atau hostname..." :value="request('search')" />
                     <select name="vendor" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                         <option value="">Semua Vendor</option>
                         @foreach ($vendors as $vendor)
                             <option value="{{ $vendor->value }}" @selected(request('vendor') === $vendor->value)>{{ $vendor->label() }}</option>
+                        @endforeach
+                    </select>
+                    <select name="status" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <option value="">Semua Status</option>
+                        @foreach ($statuses as $status)
+                            <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
                         @endforeach
                     </select>
                     <select name="location_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
@@ -41,6 +47,7 @@
                                 <th class="px-4 py-2 text-left">Vendor</th>
                                 <th class="px-4 py-2 text-left">Lokasi</th>
                                 <th class="px-4 py-2 text-left">Status</th>
+                                <th class="px-4 py-2 text-left">Terakhir Terlihat</th>
                                 <th class="px-4 py-2 text-right">Aksi</th>
                             </tr>
                         </thead>
@@ -56,9 +63,10 @@
                                     </td>
                                     <td class="px-4 py-2">{{ $device->location?->name ?? '—' }}</td>
                                     <td class="px-4 py-2">
-                                        <span class="inline-flex px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700">
-                                            {{ $device->status->label() }}
-                                        </span>
+                                        <x-device-status-badge :status="$device->status" />
+                                    </td>
+                                    <td class="px-4 py-2 text-gray-600">
+                                        {{ $device->last_seen_at ? $device->last_seen_at->format('d/m/Y H:i') : '—' }}
                                     </td>
                                     <td class="px-4 py-2 text-right space-x-2">
                                         @can('update', $device)
@@ -75,7 +83,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-4 py-6 text-center text-gray-500">Belum ada perangkat.</td>
+                                    <td colspan="7" class="px-4 py-6 text-center text-gray-500">Belum ada perangkat.</td>
                                 </tr>
                             @endforelse
                         </tbody>

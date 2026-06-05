@@ -26,6 +26,7 @@ class Device extends Model
         'is_monitored',
         'poll_interval_sec',
         'last_seen_at',
+        'last_poll_error',
         'status',
     ];
 
@@ -53,5 +54,30 @@ class Device extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function isDueForPoll(): bool
+    {
+        if (! $this->is_monitored || ! $this->snmp_profile_id) {
+            return false;
+        }
+
+        if (! $this->vendor->supportsPolling()) {
+            return false;
+        }
+
+        if ($this->last_seen_at === null) {
+            return true;
+        }
+
+        return $this->last_seen_at->copy()->addSeconds($this->poll_interval_sec)->lte(now());
+    }
+
+    public function scopePollable($query)
+    {
+        return $query
+            ->where('is_monitored', true)
+            ->whereNotNull('snmp_profile_id')
+            ->where('vendor', DeviceVendor::Mikrotik->value);
     }
 }

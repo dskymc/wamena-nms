@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\DeviceStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Device;
 use App\Models\Location;
@@ -26,14 +27,25 @@ class DashboardController extends Controller
 
         $totalDevices = Device::count();
         $totalLocations = Location::count();
-        $unknownStatus = Device::where('status', 'unknown')->count();
+        $upStatus = Device::where('status', DeviceStatus::Up)->count();
+        $downStatus = Device::where('status', DeviceStatus::Down)->count();
+        $unknownStatus = Device::where('status', DeviceStatus::Unknown)->count();
+
+        $downDevices = Device::query()
+            ->where('status', DeviceStatus::Down)
+            ->orderByDesc('updated_at')
+            ->limit(10)
+            ->get(['id', 'name', 'management_ip', 'last_seen_at']);
 
         return view('admin.dashboard', compact(
             'devicesByVendor',
             'devicesByLocation',
             'totalDevices',
             'totalLocations',
+            'upStatus',
+            'downStatus',
             'unknownStatus',
+            'downDevices',
         ));
     }
 }

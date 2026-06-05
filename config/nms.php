@@ -46,4 +46,16 @@ return [
 
     'sys_descr_oid' => '1.3.6.1.2.1.1.1.0',
 
+    'poll_oids' => [
+        'common' => [
+            'sysUpTime' => '1.3.6.1.2.1.1.3.0',
+            'sysName' => '1.3.6.1.2.1.1.5.0',
+        ],
+        'mikrotik' => [
+            'identity' => '1.3.6.1.4.1.14988.1.1.3.0',
+        ],
+    ],
+
+    'poll_batch_limit' => 50,
+
 ];

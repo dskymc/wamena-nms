@@ -4,6 +4,7 @@ namespace App\Services\Snmp;
 
 use App\Enums\SnmpSecurityLevel;
 use App\Enums\SnmpVersion;
+use App\Models\Device;
 use App\Models\SnmpProfile;
 use FreeDSx\Snmp\Exception\ConnectionException;
 use FreeDSx\Snmp\Exception\SnmpRequestException;
@@ -29,6 +30,56 @@ class SnmpClient
             return SnmpTestResult::fail('Permintaan SNMP gagal: '.$e->getMessage());
         } catch (\Throwable $e) {
             return SnmpTestResult::fail('Error: '.$e->getMessage());
+        }
+    }
+
+    public function poll(Device $device): PollResult
+    {
+        $profile = $device->snmpProfile;
+
+        if ($profile === null) {
+            return PollResult::fail('Profil SNMP tidak ditemukan.');
+        }
+
+        $oidMap = $device->vendor->pollOids();
+        $oids = array_values($oidMap);
+
+        if ($oids === []) {
+            return PollResult::fail('Tidak ada OID polling untuk vendor ini.');
+        }
+
+        try {
+            $client = new FreeDsxSnmpClient($this->buildOptions($profile, $device->management_ip));
+            $response = $client->get(...$oids);
+
+            $values = [];
+            $names = array_keys($oidMap);
+            $index = 0;
+
+            foreach ($response as $item) {
+                if (isset($names[$index])) {
+                    $values[$names[$index]] = trim((string) $item->getValue());
+                }
+                $index++;
+            }
+
+            $sysUpTime = $values['sysUpTime'] ?? null;
+
+            if ($sysUpTime === null || $sysUpTime === '') {
+                return PollResult::fail('Tidak ada respons sysUpTime dari perangkat.');
+            }
+
+            return PollResult::ok(
+                $sysUpTime,
+                $values['sysName'] ?? null,
+                $values['identity'] ?? null,
+            );
+        } catch (ConnectionException $e) {
+            return PollResult::fail('Koneksi gagal: '.$e->getMessage());
+        } catch (SnmpRequestException $e) {
+            return PollResult::fail('Permintaan SNMP gagal: '.$e->getMessage());
+        } catch (\Throwable $e) {
+            return PollResult::fail('Error: '.$e->getMessage());
         }
     }
 
