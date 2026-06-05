@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] {
+    display: none !important;
+}
+
+@layer components {
+    .nms-sidebar {
+        @apply fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-gray-200 bg-white;
+    }
+
+    .nms-main {
+        @apply min-h-screen;
+    }
+
+    .nms-brand-logo {
+        @apply h-11 w-11 shrink-0 object-contain;
+    }
+
+    .nms-card {
+        @apply rounded-lg border border-gray-200 bg-white p-6 shadow-sm;
+    }
+
+    .nms-stat-grid {
+        @apply grid grid-cols-1 gap-4 md:grid-cols-3;
+    }
+
+    .nms-panel-grid {
+        @apply grid grid-cols-1 gap-6 lg:grid-cols-2;
+    }
+}
+
+@media (min-width: 1024px) {
+    .nms-main {
+        padding-left: 16rem;
+    }
+
+    .nms-sidebar {
+        transform: translateX(0) !important;
+    }
+}
+
+.nms-sidebar.is-open {
+    transform: translateX(0);
+}
+
+.nms-sidebar.is-closed {
+    transform: translateX(-100%);
+}
+
+@media (min-width: 1024px) {
+    .nms-sidebar.is-closed {
+        transform: translateX(0) !important;
+    }
+}
+
+.nms-img-logo-sm {
+    height: 2.75rem;
+    width: 2.75rem;
+    max-width: 2.75rem;
+    max-height: 2.75rem;
+    object-fit: contain;
+}
+
+.nms-img-logo-md {
+    height: 2rem;
+    width: 2rem;
+    max-width: 2rem;
+    max-height: 2rem;
+    object-fit: contain;
+}
