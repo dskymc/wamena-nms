@@ -28,7 +28,7 @@
                                 Profil: <strong>{{ $device->snmpProfile->name }}</strong>
                             </p>
                             <p class="text-sm text-gray-600 mb-4">
-                                Status: <x-device-status-badge :status="$device->status" class="ml-1" />
+                                Status: @include('admin.partials.device-status-badge', ['status' => $device->status, 'extraClass' => 'ml-1'])
                                 @if ($device->last_seen_at)
                                     — terakhir terlihat {{ $device->last_seen_at->format('d/m/Y H:i') }}
                                 @endif
@@ -38,6 +38,10 @@
                             @endif
                             <div class="flex flex-wrap gap-2">
                                 @if ($device->vendor->supportsPolling())
+                                    <a href="{{ route('admin.devices.show', $device) }}"
+                                       class="inline-flex items-center rounded-md bg-indigo-50 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-indigo-700 hover:bg-indigo-100">
+                                        Lihat Metrik
+                                    </a>
                                     <form method="POST" action="{{ route('admin.devices.poll', $device) }}">
                                         @csrf
                                         <x-primary-button type="submit">Poll Sekarang</x-primary-button>

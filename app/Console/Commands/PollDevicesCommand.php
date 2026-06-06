@@ -12,7 +12,7 @@ class PollDevicesCommand extends Command
     protected $signature = 'nms:poll-devices
                             {--limit= : Maksimum perangkat per eksekusi}';
 
-    protected $description = 'Poll perangkat MikroTik yang jatuh tempo dan perbarui status Up/Down';
+    protected $description = 'Poll perangkat MikroTik/Ruijie/Ubiquiti yang jatuh tempo dan perbarui status + metrik';
 
     public function handle(): int
     {

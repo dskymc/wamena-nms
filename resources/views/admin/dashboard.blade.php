@@ -35,7 +35,34 @@
             </div>
         </div>
 
+        <div class="nms-stat-grid">
+            <div class="nms-card">
+                <p class="text-sm text-gray-500">Alert Aktif</p>
+                <p class="mt-2 text-3xl font-bold text-orange-600">{{ $openAlerts }}</p>
+            </div>
+        </div>
+
         <div class="nms-panel-grid">
+            <div class="nms-card">
+                <div class="mb-4 flex items-center justify-between">
+                    <h3 class="text-base font-semibold text-gray-800">Alert Aktif</h3>
+                    @can('alert_events.view')
+                        <a href="{{ route('admin.alert-events.index', ['state' => 'open']) }}" class="text-sm text-indigo-600 hover:underline">Lihat semua</a>
+                    @endcan
+                </div>
+                @forelse ($recentAlerts as $alert)
+                    <div class="border-b border-gray-100 py-2.5 last:border-0">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-sm font-medium text-gray-800">{{ $alert->message }}</span>
+                            @include('admin.partials.alert-severity-badge', ['severity' => $alert->severity])
+                        </div>
+                        <p class="text-xs text-gray-500">{{ $alert->device?->name }} — {{ $alert->fired_at->format('d/m/Y H:i') }}</p>
+                    </div>
+                @empty
+                    <p class="py-6 text-center text-sm text-gray-500">Tidak ada alert aktif.</p>
+                @endforelse
+            </div>
+
             <div class="nms-card">
                 <h3 class="mb-4 text-base font-semibold text-gray-800">Perangkat Down</h3>
                 @forelse ($downDevices as $device)

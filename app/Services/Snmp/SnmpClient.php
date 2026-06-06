@@ -6,12 +6,17 @@ use App\Enums\SnmpSecurityLevel;
 use App\Enums\SnmpVersion;
 use App\Models\Device;
 use App\Models\SnmpProfile;
+use App\Services\Metrics\MetricCollector;
 use FreeDSx\Snmp\Exception\ConnectionException;
 use FreeDSx\Snmp\Exception\SnmpRequestException;
 use FreeDSx\Snmp\SnmpClient as FreeDsxSnmpClient;
 
 class SnmpClient
 {
+    public function __construct(
+        protected MetricCollector $metricCollector,
+    ) {}
+
     public function testConnection(SnmpProfile $profile, string $ip): SnmpTestResult
     {
         try {
@@ -69,10 +74,13 @@ class SnmpClient
                 return PollResult::fail('Tidak ada respons sysUpTime dari perangkat.');
             }
 
+            $metrics = $this->metricCollector->collect($device, $client);
+
             return PollResult::ok(
                 $sysUpTime,
                 $values['sysName'] ?? null,
                 $values['identity'] ?? null,
+                $metrics,
             );
         } catch (ConnectionException $e) {
             return PollResult::fail('Koneksi gagal: '.$e->getMessage());

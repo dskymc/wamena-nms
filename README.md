@@ -64,7 +64,7 @@ Login default: `admin@nms.local` / `password` (ubah di production).
 
 ## Fitur Fase 2a — Polling & Status Up/Down
 
-- Polling SNMP otomatis untuk perangkat **MikroTik** yang dimonitor (`is_monitored = true`)
+- Polling SNMP otomatis untuk perangkat **MikroTik, Ruijie, Ubiquiti** yang dimonitor (`is_monitored = true`)
 - Status perangkat: **Up**, **Down**, atau **Unknown**
 - Dashboard kartu Up/Down/Unknown + daftar perangkat down
 - Filter status di daftar perangkat + kolom **Terakhir Terlihat**
@@ -77,7 +77,7 @@ Perangkat di-poll jika:
 
 - `is_monitored = true`
 - Memiliki profil SNMP
-- Vendor **MikroTik** (vendor lain tetap `unknown` sampai fase berikutnya)
+- Vendor **MikroTik, Ruijie, atau Ubiquiti** (vendor `other` tetap `unknown`)
 - Sudah lewat `poll_interval_sec` sejak `last_seen_at`, atau belum pernah di-poll
 
 OID yang di-GET: `sysUpTime`, `sysName`, dan identity MikroTik (konfigurasi di `config/nms.php`).
@@ -126,6 +126,70 @@ php artisan queue:work --stop-when-empty
 ```
 
 Pastikan `QUEUE_CONNECTION=database` di `.env` (migrasi tabel `jobs` sudah tersedia).
+
+## Fitur Fase 2b — Metrik Historis & Grafik
+
+- Tabel time-series `metric_samples` (CPU, memori, traffic interface)
+- Koleksi metrik otomatis setiap poll SNMP sukses
+- Halaman **Metrik** per perangkat dengan grafik Chart.js (1 jam / 24 jam / 7 hari)
+- Traffic dihitung dari delta counter IF-MIB (`ifHCInOctets` / `ifHCOutOctets`)
+- Polling status Up/Down diperluas ke **Ruijie** dan **Ubiquiti**
+- Retensi data default **7 hari** (`nms:prune-metrics` dijadwalkan harian)
+
+### Metrik yang dikumpulkan
+
+| Metrik | Sumber OID | Vendor |
+|--------|-----------|--------|
+| CPU (%) | MikroTik `mtxrHlCpuLoad` / HOST-RESOURCES `hrProcessorLoad` | Semua |
+| Memori (%) | MikroTik memory used/total / HOST-RESOURCES RAM | Semua |
+| Traffic in/out (bps) | IF-MIB counter delta per interface | Semua |
+
+Konfigurasi OID metrik: `config/nms.php` → `metric_oids`, `interface_oids`.
+
+### Perintah metrik
+
+```bash
+php artisan nms:prune-metrics          # hapus sampel > 7 hari
+php artisan nms:prune-metrics --days=14
+```
+
+Akses grafik: **Perangkat → Metrik** atau tombol **Lihat Metrik** di halaman edit.
+
+Setelah perubahan frontend: `npm run build`
+
+## Fitur Fase 2c — Alerting & Notifikasi
+
+- **Alert rules** — trigger perangkat down, recovery up, threshold metrik (CPU/memori/traffic)
+- **Alert log** — riwayat alert open/resolved dengan cooldown anti-spam
+- **Notifikasi multi-channel:** Telegram, Email (SMTP), WhatsApp (**Fonnte**)
+- **Dashboard** — kartu & daftar alert aktif
+- Evaluasi otomatis setelah poll + command `nms:evaluate-alerts`
+
+### Konfigurasi `.env`
+
+```
+NMS_TELEGRAM_ENABLED=true
+NMS_TELEGRAM_BOT_TOKEN=your_bot_token
+NMS_TELEGRAM_CHAT_ID=-1001234567890
+
+NMS_ALERT_EMAIL_ENABLED=true
+NMS_ALERT_EMAIL_RECIPIENTS=admin@example.com,noc@example.com
+
+FONNTE_ENABLED=true
+FONNTE_TOKEN=your_fonnte_token
+NMS_FONNTE_NUMBERS=6281234567890
+```
+
+Toggle runtime (tanpa edit `.env`): menu **Notifikasi** di sidebar admin.
+
+### Perintah alert
+
+```bash
+php artisan nms:evaluate-alerts
+php artisan db:seed --class=AlertRuleSeeder
+```
+
+Default rules (down, recovery, CPU>80%, memori>90%) dibuat oleh seeder.
 
 ### Role
 
@@ -182,9 +246,9 @@ Library: [freedsx/snmp](https://github.com/FreeDSx/snmp) (pure PHP, tanpa eksten
 
 | Fase | Fitur |
 |------|--------|
-| 2a | ✅ Polling SNMP berkala, status Up/Down (MikroTik) |
-| 2b | Metrik historis & grafik (traffic, CPU, RAM) |
-| 2c | Alerting (threshold, email/Telegram) |
+| 2a | ✅ Polling SNMP berkala, status Up/Down |
+| 2b | ✅ Metrik historis & grafik (traffic, CPU, RAM) |
+| 2c | ✅ Alerting (threshold, Telegram/email/Fonnte WA) |
 | 2d | Topology (LLDP/CDP walk) |
 | 2e | SNMP trap receiver |
 
@@ -198,8 +262,12 @@ app/
 ├── Http/Controllers/Admin/
 ├── Models/             # Device, Location, SnmpProfile
 ├── Policies/
-└── Services/Snmp/      # SnmpClient, PollResult, DevicePollService
-config/nms.php          # Vendor OID, poll_oids & protokol SNMP
+└── Services/
+    ├── Snmp/           # SnmpClient, PollResult, DevicePollService
+    └── Metrics/        # MetricCollector, MetricSampleWriter, MetricQueryService
+    └── Alerts/         # AlertEvaluator, AlertNotifier
+    └── Fonnte/         # FonnteClient, PhoneNormalizer
+config/nms.php, config/fonnte.php
 ```
 
 ## Perintah Berguna

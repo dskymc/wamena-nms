@@ -63,12 +63,15 @@
                                     </td>
                                     <td class="px-4 py-2">{{ $device->location?->name ?? '—' }}</td>
                                     <td class="px-4 py-2">
-                                        <x-device-status-badge :status="$device->status" />
+                                        @include('admin.partials.device-status-badge', ['status' => $device->status])
                                     </td>
                                     <td class="px-4 py-2 text-gray-600">
                                         {{ $device->last_seen_at ? $device->last_seen_at->format('d/m/Y H:i') : '—' }}
                                     </td>
                                     <td class="px-4 py-2 text-right space-x-2">
+                                        @can('view', $device)
+                                            <a href="{{ route('admin.devices.show', $device) }}" class="text-gray-700 hover:underline">Metrik</a>
+                                        @endcan
                                         @can('update', $device)
                                             <a href="{{ route('admin.devices.edit', $device) }}" class="text-indigo-600 hover:underline">Edit</a>
                                         @endcan

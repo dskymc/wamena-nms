@@ -10,8 +10,10 @@ use App\Http\Requests\Admin\UpdateDeviceRequest;
 use App\Models\Device;
 use App\Models\Location;
 use App\Models\SnmpProfile;
+use App\Services\Metrics\MetricQueryService;
 use App\Services\Snmp\DevicePollService;
 use App\Services\Snmp\SnmpClient;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -42,6 +44,31 @@ class DeviceController extends Controller
         $statuses = DeviceStatus::cases();
 
         return view('admin.devices.index', compact('devices', 'locations', 'vendors', 'statuses'));
+    }
+
+    public function show(Device $device): View
+    {
+        $this->authorize('view', $device);
+
+        $device->load(['location', 'snmpProfile']);
+
+        return view('admin.devices.show', compact('device'));
+    }
+
+    public function metrics(Device $device, MetricQueryService $metrics): JsonResponse
+    {
+        $this->authorize('view', $device);
+
+        $range = request('range', '24h');
+        $interface = request('interface');
+
+        $data = $metrics->chartData($device, $range);
+
+        if ($interface) {
+            $data['traffic'] = $metrics->trafficForInterface($device, $interface, $range);
+        }
+
+        return response()->json($data);
     }
 
     public function create(): View

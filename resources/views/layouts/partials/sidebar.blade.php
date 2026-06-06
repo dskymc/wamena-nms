@@ -29,6 +29,21 @@
                 Perangkat
             </x-sidebar-link>
         @endcan
+        @can('alert_rules.view')
+            <x-sidebar-link :href="route('admin.alert-rules.index')" :active="request()->routeIs('admin.alert-rules.*')">
+                Alert Rules
+            </x-sidebar-link>
+        @endcan
+        @can('alert_events.view')
+            <x-sidebar-link :href="route('admin.alert-events.index')" :active="request()->routeIs('admin.alert-events.*')">
+                Alert Log
+            </x-sidebar-link>
+        @endcan
+        @can('notification_settings.update')
+            <x-sidebar-link :href="route('admin.notification-settings.edit')" :active="request()->routeIs('admin.notification-settings.*')">
+                Notifikasi
+            </x-sidebar-link>
+        @endcan
         @can('users.view')
             <x-sidebar-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
                 Pengguna

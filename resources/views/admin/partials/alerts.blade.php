@@ -10,7 +10,7 @@
     </div>
 @endif
 
-@if ($errors->any())
+@if (isset($errors) && $errors->any())
     <div class="mb-4 rounded-md bg-red-50 p-4 text-sm text-red-800">
         <ul class="list-disc list-inside">
             @foreach ($errors->all() as $error)

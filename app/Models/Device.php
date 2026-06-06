@@ -6,6 +6,7 @@ use App\Enums\DeviceStatus;
 use App\Enums\DeviceVendor;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Device extends Model
@@ -56,6 +57,11 @@ class Device extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function metricSamples(): HasMany
+    {
+        return $this->hasMany(MetricSample::class);
+    }
+
     public function isDueForPoll(): bool
     {
         if (! $this->is_monitored || ! $this->snmp_profile_id) {
@@ -78,6 +84,10 @@ class Device extends Model
         return $query
             ->where('is_monitored', true)
             ->whereNotNull('snmp_profile_id')
-            ->where('vendor', DeviceVendor::Mikrotik->value);
+            ->whereIn('vendor', [
+                DeviceVendor::Mikrotik->value,
+                DeviceVendor::Ruijie->value,
+                DeviceVendor::Ubiquiti->value,
+            ]);
     }
 }

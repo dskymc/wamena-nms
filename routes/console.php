@@ -9,3 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('nms:poll-devices')->everyMinute();
+Schedule::command('nms:prune-metrics')->daily();
+Schedule::command('nms:evaluate-alerts')->everyMinute();

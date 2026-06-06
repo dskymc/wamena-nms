@@ -28,6 +28,14 @@ enum DeviceVendor: string
 
     public function supportsPolling(): bool
     {
-        return $this === self::Mikrotik;
+        return in_array($this, [self::Mikrotik, self::Ruijie, self::Ubiquiti], true);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function metricOids(): array
+    {
+        return config("nms.metric_oids.{$this->value}", []);
     }
 }

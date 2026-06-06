@@ -4,11 +4,15 @@ namespace App\Services\Snmp;
 
 use App\Enums\DeviceStatus;
 use App\Models\Device;
+use App\Services\Alerts\AlertEvaluator;
+use App\Services\Metrics\MetricSampleWriter;
 
 class DevicePollService
 {
     public function __construct(
         protected SnmpClient $snmpClient,
+        protected MetricSampleWriter $metricWriter,
+        protected AlertEvaluator $alertEvaluator,
     ) {}
 
     public function pollAndUpdate(Device $device): PollResult
@@ -29,6 +33,8 @@ class DevicePollService
 
     protected function applyResult(Device $device, PollResult $result): void
     {
+        $previousStatus = $device->status;
+
         if ($result->success) {
             $updates = [
                 'status' => DeviceStatus::Up,
@@ -41,6 +47,8 @@ class DevicePollService
             }
 
             $device->update($updates);
+            $this->metricWriter->store($device, $result->metrics);
+            $this->alertEvaluator->evaluateDevice($device->fresh(), $previousStatus);
 
             return;
         }
@@ -49,5 +57,7 @@ class DevicePollService
             'status' => DeviceStatus::Down,
             'last_poll_error' => $result->error,
         ]);
+
+        $this->alertEvaluator->evaluateDevice($device->fresh(), $previousStatus);
     }
 }
