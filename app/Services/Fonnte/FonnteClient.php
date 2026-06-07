@@ -2,21 +2,19 @@
 
 namespace App\Services\Fonnte;
 
+use App\Services\Notifications\NotificationSettingsService;
 use Illuminate\Support\Facades\Http;
 
 class FonnteClient
 {
     public function __construct(
         protected PhoneNormalizer $normalizer,
+        protected NotificationSettingsService $settings,
     ) {}
 
     public function isEnabled(): bool
     {
-        if (\App\Models\NmsSetting::get('fonnte_enabled') !== null) {
-            return \App\Models\NmsSetting::getBool('fonnte_enabled');
-        }
-
-        return (bool) config('fonnte.enabled') && ! empty(config('fonnte.token'));
+        return $this->settings->fonnteEnabled() && $this->settings->fonnteConfigured();
     }
 
     /**
@@ -24,13 +22,13 @@ class FonnteClient
      */
     public function send(string $target, string $message): array
     {
-        $token = config('fonnte.token');
+        $token = $this->settings->fonnteToken();
 
         if (! $this->isEnabled() || empty($token)) {
             return ['success' => false, 'response' => null, 'error' => 'Fonnte tidak aktif atau token kosong.'];
         }
 
-        $normalized = $this->normalizer->normalize($target);
+        $normalized = $this->normalizer->normalize($target, $this->settings->fonnteCountryCode());
 
         if ($normalized === '') {
             return ['success' => false, 'response' => null, 'error' => 'Nomor target tidak valid.'];
@@ -39,7 +37,7 @@ class FonnteClient
         try {
             $response = Http::withHeaders(['Authorization' => $token])
                 ->asForm()
-                ->post(config('fonnte.api_url'), [
+                ->post($this->settings->fonnteApiUrl(), [
                     'target' => $normalized,
                     'message' => $message,
                 ]);

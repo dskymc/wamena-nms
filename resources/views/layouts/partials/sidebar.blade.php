@@ -29,6 +29,11 @@
                 Perangkat
             </x-sidebar-link>
         @endcan
+        @can('topology.view')
+            <x-sidebar-link :href="route('admin.topology.index')" :active="request()->routeIs('admin.topology.*')">
+                Topologi
+            </x-sidebar-link>
+        @endcan
         @can('alert_rules.view')
             <x-sidebar-link :href="route('admin.alert-rules.index')" :active="request()->routeIs('admin.alert-rules.*')">
                 Alert Rules
@@ -37,6 +42,11 @@
         @can('alert_events.view')
             <x-sidebar-link :href="route('admin.alert-events.index')" :active="request()->routeIs('admin.alert-events.*')">
                 Alert Log
+            </x-sidebar-link>
+        @endcan
+        @can('snmp_traps.view')
+            <x-sidebar-link :href="route('admin.snmp-traps.index')" :active="request()->routeIs('admin.snmp-traps.*')">
+                SNMP Traps
             </x-sidebar-link>
         @endcan
         @can('notification_settings.update')

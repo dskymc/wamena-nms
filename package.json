@@ -19,6 +19,8 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
-        "chart.js": "^4.5.1"
+        "chart.js": "^4.5.1",
+        "vis-data": "^8.0.4",
+        "vis-network": "^10.1.0"
     }
 }

@@ -35,19 +35,26 @@ function formatBps(value) {
     return `${value.toFixed(0)} bps`;
 }
 
+function hasChartData(values) {
+    return Array.isArray(values) && values.length > 0;
+}
+
 function buildLineChart(canvasId, label, labels, values, color, ySuffix = '%') {
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
         return null;
     }
 
+    const chartValues = hasChartData(values) ? values : [0];
+    const chartLabels = hasChartData(labels) ? labels : ['—'];
+
     return new Chart(canvas, {
         type: 'line',
         data: {
-            labels,
+            labels: chartLabels,
             datasets: [{
                 label,
-                data: values,
+                data: chartValues,
                 borderColor: color,
                 backgroundColor: `${color}22`,
                 fill: true,
@@ -79,14 +86,18 @@ function buildTrafficChart(canvasId, labels, inValues, outValues) {
         return null;
     }
 
+    const chartLabels = hasChartData(labels) ? labels : ['—'];
+    const chartIn = hasChartData(inValues) ? inValues : [0];
+    const chartOut = hasChartData(outValues) ? outValues : [0];
+
     return new Chart(canvas, {
         type: 'line',
         data: {
-            labels,
+            labels: chartLabels,
             datasets: [
                 {
                     label: 'Traffic In',
-                    data: inValues,
+                    data: chartIn,
                     borderColor: '#2563eb',
                     backgroundColor: '#2563eb22',
                     fill: true,
@@ -95,7 +106,7 @@ function buildTrafficChart(canvasId, labels, inValues, outValues) {
                 },
                 {
                     label: 'Traffic Out',
-                    data: outValues,
+                    data: chartOut,
                     borderColor: '#16a34a',
                     backgroundColor: '#16a34a22',
                     fill: true,
@@ -152,19 +163,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const data = await response.json();
 
-        if (interfaceSelect && Object.keys(data.interfaces || {}).length) {
+        if (interfaceSelect) {
+            const entries = Object.entries(data.interfaces || {});
             const current = selectedInterface;
             interfaceSelect.innerHTML = '';
-            Object.entries(data.interfaces).forEach(([key, label]) => {
-                const option = document.createElement('option');
-                option.value = key;
-                option.textContent = label;
-                option.selected = key === current;
-                interfaceSelect.appendChild(option);
-            });
 
-            if (!selectedInterface) {
-                selectedInterface = interfaceSelect.value;
+            if (entries.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Belum ada data interface';
+                interfaceSelect.appendChild(option);
+            } else {
+                entries.forEach(([key, label]) => {
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = label;
+                    option.selected = key === current;
+                    interfaceSelect.appendChild(option);
+                });
+
+                if (!selectedInterface || !data.interfaces[selectedInterface]) {
+                    selectedInterface = interfaceSelect.value;
+                }
             }
         }
 

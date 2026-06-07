@@ -91,6 +91,17 @@ class SnmpClient
         }
     }
 
+    public function makeClient(Device $device): FreeDsxSnmpClient
+    {
+        $profile = $device->snmpProfile;
+
+        if ($profile === null) {
+            throw new \InvalidArgumentException('Profil SNMP tidak ditemukan.');
+        }
+
+        return new FreeDsxSnmpClient($this->buildOptions($profile, $device->management_ip));
+    }
+
     /**
      * @return array<string, mixed>
      */

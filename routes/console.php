@@ -11,3 +11,5 @@ Artisan::command('inspire', function () {
 Schedule::command('nms:poll-devices')->everyMinute();
 Schedule::command('nms:prune-metrics')->daily();
 Schedule::command('nms:evaluate-alerts')->everyMinute();
+Schedule::command('nms:discover-topology')->everyThirtyMinutes();
+Schedule::command('nms:prune-traps')->daily();

@@ -8,9 +8,9 @@ use App\Mail\AlertNotificationMail;
 use App\Models\AlertEvent;
 use App\Models\AlertRule;
 use App\Models\Device;
-use App\Models\NmsSetting;
 use App\Models\WaMessage;
 use App\Services\Fonnte\FonnteClient;
+use App\Services\Notifications\NotificationSettingsService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 
@@ -19,6 +19,7 @@ class AlertNotifier
     public function __construct(
         protected AlertMessageBuilder $messageBuilder,
         protected FonnteClient $fonnteClient,
+        protected NotificationSettingsService $settings,
     ) {}
 
     public function notify(AlertEvent $event, AlertRule $rule, Device $device, bool $isRecovery = false): void
@@ -55,23 +56,12 @@ class AlertNotifier
 
     protected function telegramEnabled(): bool
     {
-        if (NmsSetting::get('telegram_enabled') !== null) {
-            return NmsSetting::getBool('telegram_enabled');
-        }
-
-        return (bool) config('nms.alerts.telegram.enabled')
-            && ! empty(config('nms.alerts.telegram.bot_token'))
-            && ! empty(config('nms.alerts.telegram.chat_id'));
+        return $this->settings->telegramEnabled() && $this->settings->telegramConfigured();
     }
 
     protected function emailEnabled(): bool
     {
-        if (NmsSetting::get('email_enabled') !== null) {
-            return NmsSetting::getBool('email_enabled');
-        }
-
-        return (bool) config('nms.alerts.email.enabled')
-            && config('nms.alerts.email.recipients') !== [];
+        return $this->settings->emailEnabled() && $this->settings->emailConfigured();
     }
 
     protected function sendTelegram(string $body): string
@@ -80,8 +70,8 @@ class AlertNotifier
             return 'skipped';
         }
 
-        $token = config('nms.alerts.telegram.bot_token');
-        $chatId = config('nms.alerts.telegram.chat_id');
+        $token = $this->settings->telegramBotToken();
+        $chatId = $this->settings->telegramChatId();
 
         try {
             $response = Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
@@ -101,10 +91,12 @@ class AlertNotifier
             return 'skipped';
         }
 
-        $recipients = config('nms.alerts.email.recipients');
+        $recipients = $this->settings->emailRecipients();
         $subject = $this->messageBuilder->buildEmailSubject($event, $device);
 
         try {
+            $this->settings->applyMailConfig();
+
             foreach ($recipients as $email) {
                 Mail::to($email)->send(new AlertNotificationMail($subject, $body));
             }
@@ -121,7 +113,7 @@ class AlertNotifier
             return 'skipped';
         }
 
-        $numbers = config('fonnte.noc_numbers');
+        $numbers = $this->settings->fonnteNumbers();
 
         if ($numbers === []) {
             return 'skipped: no numbers';
@@ -147,7 +139,7 @@ class AlertNotifier
 
     public function sendTestWhatsApp(string $message): array
     {
-        $numbers = config('fonnte.noc_numbers');
+        $numbers = $this->settings->fonnteNumbers();
 
         if ($numbers === []) {
             return ['success' => false, 'error' => 'Tidak ada nomor NOC dikonfigurasi.'];
@@ -175,5 +167,29 @@ class AlertNotifier
         $result = $this->sendTelegram($message);
 
         return ['success' => $result === 'sent', 'result' => $result];
+    }
+
+    /**
+     * @return array{success: bool, error?: string}
+     */
+    public function sendTestEmail(string $message): array
+    {
+        $recipients = $this->settings->emailRecipients();
+
+        if ($recipients === []) {
+            return ['success' => false, 'error' => 'Tidak ada penerima email dikonfigurasi.'];
+        }
+
+        try {
+            $this->settings->applyMailConfig();
+
+            foreach ($recipients as $email) {
+                Mail::to($email)->send(new AlertNotificationMail('[WAMENA NMS] Uji Email', $message));
+            }
+
+            return ['success' => true];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
     }
 }

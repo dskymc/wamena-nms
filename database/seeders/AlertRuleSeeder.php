@@ -47,6 +47,18 @@ class AlertRuleSeeder extends Seeder
                 'consecutive_breaches' => 2,
                 'channels' => ['telegram', 'email'],
             ],
+            [
+                'name' => 'Default — SNMP Link Down',
+                'trigger_type' => AlertTriggerType::SnmpTrap,
+                'severity' => AlertSeverity::Warning,
+                'channels' => ['telegram', 'whatsapp', 'email'],
+            ],
+            [
+                'name' => 'Default — SNMP Link Up',
+                'trigger_type' => AlertTriggerType::SnmpTrap,
+                'severity' => AlertSeverity::Info,
+                'channels' => ['telegram', 'whatsapp'],
+            ],
         ];
 
         foreach ($defaults as $rule) {

@@ -26,11 +26,14 @@ class RolePermissionSeeder extends Seeder
             'devices.create',
             'devices.update',
             'devices.delete',
+            'topology.view',
+            'topology.discover',
             'alert_rules.view',
             'alert_rules.create',
             'alert_rules.update',
             'alert_rules.delete',
             'alert_events.view',
+            'snmp_traps.view',
             'notification_settings.update',
             'users.view',
             'users.create',
@@ -50,8 +53,10 @@ class RolePermissionSeeder extends Seeder
             'locations.view', 'locations.create', 'locations.update', 'locations.delete',
             'snmp_profiles.view', 'snmp_profiles.create', 'snmp_profiles.update', 'snmp_profiles.delete',
             'devices.view', 'devices.create', 'devices.update', 'devices.delete',
+            'topology.view', 'topology.discover',
             'alert_rules.view', 'alert_rules.create', 'alert_rules.update', 'alert_rules.delete',
             'alert_events.view', 'notification_settings.update',
+            'snmp_traps.view',
             'users.view',
         ]);
 
@@ -60,8 +65,10 @@ class RolePermissionSeeder extends Seeder
             'locations.view',
             'snmp_profiles.view', 'snmp_profiles.create', 'snmp_profiles.update', 'snmp_profiles.delete',
             'devices.view', 'devices.create', 'devices.update', 'devices.delete',
+            'topology.view', 'topology.discover',
             'alert_rules.view', 'alert_rules.create', 'alert_rules.update', 'alert_rules.delete',
             'alert_events.view',
+            'snmp_traps.view',
         ]);
 
         $viewer = Role::firstOrCreate(['name' => 'viewer']);
@@ -69,8 +76,10 @@ class RolePermissionSeeder extends Seeder
             'locations.view',
             'snmp_profiles.view',
             'devices.view',
+            'topology.view',
             'alert_rules.view',
             'alert_events.view',
+            'snmp_traps.view',
         ]);
     }
 }

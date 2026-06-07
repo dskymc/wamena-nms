@@ -35,6 +35,7 @@ class AlertEvaluator
                 AlertTriggerType::DeviceDown => $this->evaluateDeviceDown($device, $previousStatus, $rule),
                 AlertTriggerType::DeviceRecovery => $this->evaluateDeviceRecovery($device, $previousStatus, $rule),
                 AlertTriggerType::MetricThreshold => $this->evaluateMetricThreshold($device, $rule),
+                AlertTriggerType::SnmpTrap => null,
             };
         }
     }

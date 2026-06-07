@@ -92,19 +92,51 @@ return [
         'hrStorageRam' => '1.3.6.1.2.1.25.2.1.2',
     ],
 
+    'topology' => [
+        'discovery_interval_minutes' => 30,
+        'batch_limit' => 50,
+        'stale_after_minutes' => 120,
+    ],
+
+    'topology_oids' => [
+        'lldp' => [
+            'loc_port_id' => '1.0.8802.1.1.2.1.3.7.1.3',
+            'rem_local_port' => '1.0.8802.1.1.2.1.4.1.1',
+            'rem_chassis_id' => '1.0.8802.1.1.2.1.4.1.5',
+            'rem_port_id' => '1.0.8802.1.1.2.1.4.1.7',
+            'rem_sys_name' => '1.0.8802.1.1.2.1.4.1.9',
+            'rem_man_addr' => '1.0.8802.1.1.2.1.4.1.12',
+        ],
+        'cdp' => [
+            'cache_device_id' => '1.3.6.1.4.1.9.9.23.1.2.1.1.6',
+            'cache_device_port' => '1.3.6.1.4.1.9.9.23.1.2.1.1.7',
+            'cache_platform' => '1.3.6.1.4.1.9.9.23.1.2.1.1.8',
+        ],
+        'vendors' => [
+            'mikrotik' => ['lldp'],
+            'ruijie' => ['lldp', 'cdp'],
+            'ubiquiti' => ['lldp'],
+        ],
+    ],
+
     'alerts' => [
-        'telegram' => [
-            'enabled' => env('NMS_TELEGRAM_ENABLED', false),
-            'bot_token' => env('NMS_TELEGRAM_BOT_TOKEN'),
-            'chat_id' => env('NMS_TELEGRAM_CHAT_ID'),
+        // Semua pengaturan alert dikelola via menu Admin → Notifikasi (tabel nms_settings).
+    ],
+
+    'traps' => [
+        'bind_ip' => '0.0.0.0',
+        'port' => 1162,
+        'auto_alert_link_events' => true,
+        'alert_cooldown_minutes' => 15,
+        'retention_days' => 30,
+        'standard_trap_oids' => [
+            'coldStart' => '1.3.6.1.6.3.1.1.5.1',
+            'warmStart' => '1.3.6.1.6.3.1.1.5.2',
+            'linkDown' => '1.3.6.1.6.3.1.1.5.3',
+            'linkUp' => '1.3.6.1.6.3.1.1.5.4',
+            'authenticationFailure' => '1.3.6.1.6.3.1.1.5.5',
         ],
-        'email' => [
-            'enabled' => env('NMS_ALERT_EMAIL_ENABLED', false),
-            'recipients' => array_filter(array_map(
-                'trim',
-                explode(',', env('NMS_ALERT_EMAIL_RECIPIENTS', ''))
-            )),
-        ],
+        'if_index_oid_prefix' => '1.3.6.1.2.1.2.2.1.1',
     ],
 
 ];

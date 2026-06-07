@@ -8,6 +8,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/js/app.js',
                 'resources/js/device-metrics.js',
+                'resources/js/topology-map.js',
             ],
             refresh: true,
         }),

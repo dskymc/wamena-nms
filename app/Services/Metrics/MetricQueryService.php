@@ -57,9 +57,20 @@ class MetricQueryService
 
     protected function interfaceOptions(Device $device, Carbon $since): Collection
     {
+        $options = $this->distinctInterfaceSources($device, $since, MetricType::TrafficInBps);
+
+        if ($options->isNotEmpty()) {
+            return $options;
+        }
+
+        return $this->distinctInterfaceSources($device, $since, MetricType::IfInOctets);
+    }
+
+    protected function distinctInterfaceSources(Device $device, Carbon $since, MetricType $metric): Collection
+    {
         return MetricSample::query()
             ->where('device_id', $device->id)
-            ->where('metric', MetricType::TrafficInBps)
+            ->where('metric', $metric)
             ->where('recorded_at', '>=', $since)
             ->whereNotNull('source')
             ->select('source', 'source_label')

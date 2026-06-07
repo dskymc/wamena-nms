@@ -2,11 +2,13 @@
 
 namespace App\Services\Fonnte;
 
+use App\Services\Notifications\NotificationSettingsService;
+
 class PhoneNormalizer
 {
     public function normalize(string $number, ?string $countryCode = null): string
     {
-        $countryCode = $countryCode ?? config('fonnte.default_country_code', '62');
+        $countryCode = $countryCode ?? app(NotificationSettingsService::class)->fonnteCountryCode();
         $digits = preg_replace('/\D/', '', $number) ?? '';
 
         if ($digits === '') {

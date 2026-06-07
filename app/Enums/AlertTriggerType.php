@@ -7,6 +7,7 @@ enum AlertTriggerType: string
     case DeviceDown = 'device_down';
     case DeviceRecovery = 'device_recovery';
     case MetricThreshold = 'metric_threshold';
+    case SnmpTrap = 'snmp_trap';
 
     public function label(): string
     {
@@ -14,6 +15,7 @@ enum AlertTriggerType: string
             self::DeviceDown => 'Perangkat Down',
             self::DeviceRecovery => 'Recovery (Up)',
             self::MetricThreshold => 'Threshold Metrik',
+            self::SnmpTrap => 'SNMP Trap',
         };
     }
 }

@@ -39,11 +39,17 @@ class MetricCollector
         if ($device->vendor === \App\Enums\DeviceVendor::Mikrotik) {
             $value = $this->getScalar($client, $cpuOid);
 
-            if ($value === null) {
+            if ($value !== null) {
+                return [new MetricReading(MetricType::Cpu, $value)];
+            }
+
+            $values = $this->walkNumericValues($client, '1.3.6.1.2.1.25.3.3.1.2');
+
+            if ($values === []) {
                 return [];
             }
 
-            return [new MetricReading(MetricType::Cpu, $value)];
+            return [new MetricReading(MetricType::Cpu, round(array_sum($values) / count($values), 2))];
         }
 
         $values = $this->walkNumericValues($client, $cpuOid);
@@ -220,7 +226,13 @@ class MetricCollector
                 return null;
             }
 
-            return $this->toFloat((string) $first->getValue());
+            $raw = trim((string) $first->getValue());
+
+            if ($raw === '') {
+                return null;
+            }
+
+            return $this->toFloat($raw);
         } catch (\Throwable) {
             return null;
         }
@@ -242,6 +254,20 @@ class MetricCollector
      */
     protected function walkIndexedValues(FreeDsxSnmpClient $client, string $oid, bool $asString = false): array
     {
+        $values = $this->walkIndexedValuesViaWalk($client, $oid, $asString);
+
+        if ($values !== []) {
+            return $values;
+        }
+
+        return $this->walkIndexedValuesViaGetNext($client, $oid, $asString);
+    }
+
+    /**
+     * @return array<string, float|string>
+     */
+    protected function walkIndexedValuesViaWalk(FreeDsxSnmpClient $client, string $oid, bool $asString = false): array
+    {
         try {
             $response = $client->walk($oid);
             $values = [];
@@ -261,6 +287,50 @@ class MetricCollector
         } catch (\Throwable) {
             return [];
         }
+    }
+
+    /**
+     * Beberapa perangkat (mis. MikroTik) tidak merespons SNMP WALK, tetapi GET-NEXT berfungsi.
+     *
+     * @return array<string, float|string>
+     */
+    protected function walkIndexedValuesViaGetNext(FreeDsxSnmpClient $client, string $oid, bool $asString = false): array
+    {
+        $baseOid = rtrim($oid, '.');
+        $values = [];
+        $currentOid = $baseOid;
+        $maxSteps = 512;
+
+        try {
+            for ($step = 0; $step < $maxSteps; $step++) {
+                $response = $client->getNext($currentOid);
+                $item = $response->first();
+
+                if ($item === null) {
+                    break;
+                }
+
+                $fullOid = (string) $item->getOid();
+
+                if (! str_starts_with($fullOid, $baseOid.'.')) {
+                    break;
+                }
+
+                $index = $this->extractIndex($fullOid, $baseOid);
+
+                if ($index === null) {
+                    break;
+                }
+
+                $raw = (string) $item->getValue();
+                $values[$index] = $asString ? trim($raw) : $this->toFloat($raw);
+                $currentOid = $fullOid;
+            }
+        } catch (\Throwable) {
+            return $values;
+        }
+
+        return $values;
     }
 
     protected function extractIndex(string $fullOid, string $baseOid): ?string

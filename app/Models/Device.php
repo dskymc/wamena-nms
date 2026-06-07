@@ -62,6 +62,33 @@ class Device extends Model
         return $this->hasMany(MetricSample::class);
     }
 
+    public function interfaces(): HasMany
+    {
+        return $this->hasMany(DeviceInterface::class);
+    }
+
+    public function outgoingTopologyLinks(): HasMany
+    {
+        return $this->hasMany(TopologyLink::class, 'source_device_id');
+    }
+
+    public function incomingTopologyLinks(): HasMany
+    {
+        return $this->hasMany(TopologyLink::class, 'target_device_id');
+    }
+
+    public function snmpTraps(): HasMany
+    {
+        return $this->hasMany(SnmpTrap::class);
+    }
+
+    public function scopeDiscoverable($query)
+    {
+        return $query
+            ->pollable()
+            ->where('status', DeviceStatus::Up);
+    }
+
     public function isDueForPoll(): bool
     {
         if (! $this->is_monitored || ! $this->snmp_profile_id) {
